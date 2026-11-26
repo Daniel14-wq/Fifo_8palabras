@@ -12,52 +12,56 @@ module tt_um_Fifo (
     input  wire       rst_n
 );
 
-    // FIFO de 8 posiciones de 8 bits.
+    // FIFO de 8 palabras de 8 bits
     reg [7:0] mem [0:7];
 
-    // Punteros y contador.
+    // Punteros de escritura y lectura
     reg [2:0] wr_ptr;
     reg [2:0] rd_ptr;
+
+    // Contador de ocupacion
     reg [3:0] used;
 
-    // Registro de salida.
+    // Registro de salida
     reg [7:0] data_out;
-    reg       read_valid;
+    reg read_valid;
 
-    // Senales internas.
+    // Senales internas
     wire [7:0] data_in;
     wire write_en;
     wire read_en;
 
     wire full;
     wire empty;
+    wire [3:0] count;
+
     wire do_write;
     wire do_read;
 
-    // BLOQUE 1. ENTRADAS
+    // ENTRADAS
     assign data_in = ui_in[7:0];
-
-    // Controles desde pines bidireccionales.
     assign write_en = uio_in[0];
     assign read_en  = uio_in[1];
 
-    // BLOQUE 2. ESTADOS DE LA FIFO
+    // ESTADOS DE LA FIFO
+    assign count = used;
     assign full  = (used == 4'd8);
     assign empty = (used == 4'd0);
 
-    // BLOQUE 3. CONTROL DE OPERACIONES
+    // CONTROL DE OPERACIONES
     assign do_write = write_en && !full;
     assign do_read  = read_en  && !empty;
 
-    // BLOQUE 4. MEMORIA Y PUNTEROS
     always @(posedge clk) begin
 
         if (!rst_n) begin
+
             wr_ptr     <= 3'd0;
             rd_ptr     <= 3'd0;
             used       <= 4'd0;
             data_out   <= 8'd0;
             read_valid <= 1'b0;
+
         end
 
         else begin
@@ -93,10 +97,10 @@ module tt_um_Fifo (
         end
     end
 
-    // BLOQUE 5. SALIDA DE DATOS
+    // SALIDA DE DATOS
     assign uo_out = data_out;
 
-    // BLOQUE 6. SALIDAS BIDIRECCIONALES
+    // SALIDAS BIDIRECCIONALES
     assign uio_out[0] = 1'b0;
     assign uio_out[1] = 1'b0;
 
@@ -104,17 +108,20 @@ module tt_um_Fifo (
     assign uio_out[3] = empty;
     assign uio_out[4] = read_valid;
 
-    assign uio_out[5] = used[0];
-    assign uio_out[6] = used[1];
-    assign uio_out[7] = used[2];
+    assign uio_out[5] = count[0];
+    assign uio_out[6] = count[1];
+    assign uio_out[7] = count[2];
 
+    // CONFIGURACION DE PINES
     // 0 = Entrada
     // 1 = Salida
     assign uio_oe = 8'b11111100;
 
-    // Puertos no utilizados funcionalmente.
-    wire _unused = &{ena, uio_in[7:2], 1'b0};
+    // Senales no utilizadas
+    wire _unused = &{ena, uio_in[7:2],
+                     count[3], 1'b0};
 
 endmodule
 
 `default_nettype wire
+
