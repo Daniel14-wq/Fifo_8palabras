@@ -1,3 +1,4 @@
+
 `default_nettype none
 
 module tt_um_Fifo (
@@ -11,19 +12,19 @@ module tt_um_Fifo (
     input  wire       rst_n
 );
 
-    // FIFO de 4 posiciones de 8 bits.
+    // FIFO de 8 posiciones de 8 bits.
     reg [7:0] mem [0:7];
 
     // Punteros y contador.
-    reg [1:0] wr_ptr;
-    reg [1:0] rd_ptr;
-    reg [7:0] used;
+    reg [2:0] wr_ptr;
+    reg [2:0] rd_ptr;
+    reg [3:0] used;
 
     // Registro de salida.
     reg [7:0] data_out;
     reg       read_valid;
 
-    // Señales internas.
+    // Senales internas.
     wire [7:0] data_in;
     wire write_en;
     wire read_en;
@@ -34,15 +35,15 @@ module tt_um_Fifo (
     wire do_read;
 
     // BLOQUE 1. ENTRADAS
-    assign data_in  = ui_in[7:0];
+    assign data_in = ui_in[7:0];
 
     // Controles desde pines bidireccionales.
     assign write_en = uio_in[0];
     assign read_en  = uio_in[1];
 
     // BLOQUE 2. ESTADOS DE LA FIFO
-    assign full  = (used == 3'd8);
-    assign empty = (used == 3'd0);
+    assign full  = (used == 4'd8);
+    assign empty = (used == 4'd0);
 
     // BLOQUE 3. CONTROL DE OPERACIONES
     assign do_write = write_en && !full;
@@ -52,9 +53,9 @@ module tt_um_Fifo (
     always @(posedge clk) begin
 
         if (!rst_n) begin
-            wr_ptr     <= 2'd0;
-            rd_ptr     <= 2'd0;
-            used       <= 7'd0;
+            wr_ptr     <= 3'd0;
+            rd_ptr     <= 3'd0;
+            used       <= 4'd0;
             data_out   <= 8'd0;
             read_valid <= 1'b0;
         end
@@ -66,23 +67,23 @@ module tt_um_Fifo (
             // ESCRITURA
             if (do_write) begin
                 mem[wr_ptr] <= data_in;
-                wr_ptr <= wr_ptr + 2'd1;
+                wr_ptr <= wr_ptr + 3'd1;
             end
 
             // LECTURA
             if (do_read) begin
                 data_out <= mem[rd_ptr];
-                rd_ptr <= rd_ptr + 2'd1;
+                rd_ptr <= rd_ptr + 3'd1;
             end
 
             // CONTADOR DE OCUPACION
             case ({do_write, do_read})
 
                 2'b10:
-                    used <= used + 7'd1;
+                    used <= used + 4'd1;
 
                 2'b01:
-                    used <= used - 7'd1;
+                    used <= used - 4'd1;
 
                 default:
                     used <= used;
@@ -111,7 +112,7 @@ module tt_um_Fifo (
     // 1 = Salida
     assign uio_oe = 8'b11111100;
 
-    // Puerto no utilizado funcionalmente.
+    // Puertos no utilizados funcionalmente.
     wire _unused = &{ena, uio_in[7:2], 1'b0};
 
 endmodule
